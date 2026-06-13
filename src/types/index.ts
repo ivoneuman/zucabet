@@ -1,6 +1,6 @@
 export type GameStatus = 'upcoming' | 'open' | 'finished'
 export type FirstGoalType = 'player' | 'own_goal' | 'no_goal'
-export type GamePhase = 'group' | 'round_of_16' | 'quarter' | 'semi' | 'final'
+export type GamePhase = 'group' | 'round_of_32' | 'round_of_16' | 'quarter' | 'semi' | 'final'
 
 export interface Participant {
   id: string
