@@ -11,7 +11,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen max-w-2xl mx-auto p-4">
       <header className="flex items-center justify-between pt-2 mb-6">
         <div>
-          <h1 className="text-xl font-black text-yellow-400">ZUCA BET · Admin</h1>
+          <h1 className="text-xl font-black text-yellow-400 flex items-center gap-2">
+            ZUCA BET
+            <svg className="w-5 h-[14px] rounded-sm" viewBox="0 0 720 504" xmlns="http://www.w3.org/2000/svg" aria-label="Brasil">
+              <rect width="720" height="504" fill="#009b3a" />
+              <polygon points="360,50 670,252 360,454 50,252" fill="#fedf00" />
+              <circle cx="360" cy="252" r="110" fill="#002776" />
+            </svg>
+            · Admin
+          </h1>
           <p className="text-gray-500 text-xs">{session.name}</p>
         </div>
         <div className="flex gap-2 items-center">
