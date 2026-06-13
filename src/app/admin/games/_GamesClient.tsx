@@ -6,6 +6,7 @@ import type { Game, GamePhase } from '@/types'
 
 const PHASE_LABELS: Record<GamePhase, string> = {
   group: 'Fase de grupos',
+  round_of_32: '16-avos de final',
   round_of_16: 'Oitavas',
   quarter: 'Quartas',
   semi: 'Semi',
@@ -14,12 +15,12 @@ const PHASE_LABELS: Record<GamePhase, string> = {
 
 const STATUS_LABELS = { upcoming: '⏳ Aguardando', open: '🔒 Palpites fechados', finished: '✅ Finalizado' }
 
-// Data/hora padrão para o primeiro jogo do Brasil na Copa 2026 (fuso de Angola UTC+1)
-// Os jogos da fase de grupos do Brasil: ~18 jun, 22 jun, 26 jun 2026 (datas aproximadas)
+// Jogos do Brasil na fase de grupos da Copa 2026 (Grupo C: Marrocos, Haiti, Escócia)
+// Horários oficiais (Brasília, UTC-3)
 const DEFAULT_GAMES = [
-  { opponent: 'México', game_date: '2026-06-18T18:00:00-03:00', phase: 'group' as GamePhase },
-  { opponent: 'Japão', game_date: '2026-06-22T18:00:00-03:00', phase: 'group' as GamePhase },
-  { opponent: 'Camarões', game_date: '2026-06-26T18:00:00-03:00', phase: 'group' as GamePhase },
+  { opponent: 'Marrocos', game_date: '2026-06-13T19:00:00-03:00', phase: 'group' as GamePhase },
+  { opponent: 'Haiti', game_date: '2026-06-19T21:30:00-03:00', phase: 'group' as GamePhase },
+  { opponent: 'Escócia', game_date: '2026-06-24T19:00:00-03:00', phase: 'group' as GamePhase },
 ]
 
 export default function GamesClient({ games }: { games: Game[] }) {
@@ -46,6 +47,18 @@ export default function GamesClient({ games }: { games: Game[] }) {
 
     if (!res.ok) { setError(data.error ?? 'Erro.'); return }
     setOpponent(''); setGameDate('')
+    router.refresh()
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Remover este jogo? Palpites ligados a ele também serão removidos.')) return
+    setLoading(true)
+    await fetch('/api/admin/games', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    setLoading(false)
     router.refresh()
   }
 
@@ -125,7 +138,17 @@ export default function GamesClient({ games }: { games: Game[] }) {
                   })} · {PHASE_LABELS[g.phase as GamePhase]}
                 </p>
               </div>
-              <span className="text-xs text-gray-400">{STATUS_LABELS[g.status]}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">{STATUS_LABELS[g.status]}</span>
+                <button
+                  onClick={() => handleDelete(g.id)}
+                  disabled={loading}
+                  className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
+                  title="Remover jogo"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
           </div>
         ))}
