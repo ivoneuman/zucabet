@@ -6,6 +6,29 @@ function gameResult(brazil: number, opp: number): 'win' | 'draw' | 'loss' {
   return 'loss'
 }
 
+// Apelidos/variações conhecidas que devem ser tratadas como o mesmo jogador
+const PLAYER_ALIASES: Record<string, string> = {
+  'vinicius jr': 'vini jr',
+  'vinicius junior': 'vini jr',
+  'vini junior': 'vini jr',
+  'vinicius': 'vini jr',
+}
+
+// Normaliza nome de jogador para comparação: remove acentos, pontuação,
+// espaços extras e mapeia apelidos conhecidos (ex.: "Vinicius Jr." -> "vini jr")
+export function normalizePlayerName(name: string): string {
+  const base = name
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // remove acentos
+    .replace(/[.\-]/g, ' ') // pontuação -> espaço
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return PLAYER_ALIASES[base] ?? base
+}
+
 export function calculateScore(bet: Bet, game: Game): ScoreBreakdown {
   // Jogo precisa ter resultado lançado
   if (
@@ -60,7 +83,7 @@ export function calculateScore(bet: Bet, game: Game): ScoreBreakdown {
       if (
         bet.first_goal_player &&
         game.first_goal_player &&
-        bet.first_goal_player.trim().toLowerCase() === game.first_goal_player.trim().toLowerCase()
+        normalizePlayerName(bet.first_goal_player) === normalizePlayerName(game.first_goal_player)
       ) {
         breakdown.first_goal = 1
       }
