@@ -10,8 +10,16 @@ interface Props {
   accumulated: number
 }
 
+function firstGoalLabel(type: FirstGoalType | null, player: string | null) {
+  if (type === 'player') return player || 'Jogador'
+  if (type === 'own_goal') return 'Gol contra'
+  if (type === 'no_goal') return 'Sem gol'
+  return '—'
+}
+
 export default function ResultsClient({ games, betAmount, accumulated }: Props) {
   const router = useRouter()
+  const [editingId, setEditingId] = useState<string | null>(null)
   const pendingGames = games.filter((g) => g.status !== 'finished')
   const finishedGames = games.filter((g) => g.status === 'finished')
 
@@ -29,16 +37,43 @@ export default function ResultsClient({ games, betAmount, accumulated }: Props) 
           <p className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">Finalizados</p>
           <div className="space-y-2">
             {finishedGames.map((g) => (
-              <div key={g.id} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3">
-                <p className="font-medium text-white">
-                  Brasil {g.brazil_goals} × {g.opponent_goals} {g.opponent} ✅
-                </p>
+              <div key={g.id} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-white">
+                    Brasil {g.brazil_goals} × {g.opponent_goals} {g.opponent} ✅
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(editingId === g.id ? null : g.id)}
+                    className="text-xs text-yellow-400 hover:underline whitespace-nowrap"
+                  >
+                    {editingId === g.id ? 'Cancelar' : '✏️ Editar'}
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500">
                   {new Date(g.game_date).toLocaleString('pt-BR', {
                     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
                     timeZone: 'Africa/Luanda'
                   })}
                 </p>
+                <div className="text-xs text-gray-400 flex flex-wrap gap-x-3 gap-y-1">
+                  <span>⚽ 1º gol: {firstGoalLabel(g.first_goal_type, g.first_goal_player)}</span>
+                  <span>🚫 VAR: {g.var_annulled ? 'Sim' : 'Não'}</span>
+                  <span>⚠️ Pênalti: {g.penalty ? 'Sim' : 'Não'}</span>
+                  <span>🤕 Cabeçada: {g.header_goal ? 'Sim' : 'Não'}</span>
+                  <span>🟨 Cartões BR: {g.brazil_yellow_cards}</span>
+                </div>
+
+                {editingId === g.id && (
+                  <ResultForm
+                    game={g}
+                    betAmount={betAmount}
+                    accumulated={accumulated}
+                    isEdit
+                    onSaved={() => { setEditingId(null); router.refresh() }}
+                    onCancel={() => setEditingId(null)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -48,20 +83,22 @@ export default function ResultsClient({ games, betAmount, accumulated }: Props) 
   )
 }
 
-function ResultForm({ game, betAmount, accumulated, onSaved }: {
+function ResultForm({ game, betAmount, accumulated, isEdit = false, onSaved, onCancel }: {
   game: Game
   betAmount: number
   accumulated: number
+  isEdit?: boolean
   onSaved: () => void
+  onCancel?: () => void
 }) {
-  const [brazilGoals, setBrazilGoals] = useState(0)
-  const [oppGoals, setOppGoals] = useState(0)
-  const [firstGoalType, setFirstGoalType] = useState<FirstGoalType>('player')
-  const [firstGoalPlayer, setFirstGoalPlayer] = useState('')
-  const [varAnnulled, setVarAnnulled] = useState(false)
-  const [penalty, setPenalty] = useState(false)
-  const [headerGoal, setHeaderGoal] = useState(false)
-  const [yellowCards, setYellowCards] = useState(0)
+  const [brazilGoals, setBrazilGoals] = useState(game.brazil_goals ?? 0)
+  const [oppGoals, setOppGoals] = useState(game.opponent_goals ?? 0)
+  const [firstGoalType, setFirstGoalType] = useState<FirstGoalType>(game.first_goal_type ?? 'player')
+  const [firstGoalPlayer, setFirstGoalPlayer] = useState(game.first_goal_player ?? '')
+  const [varAnnulled, setVarAnnulled] = useState(game.var_annulled ?? false)
+  const [penalty, setPenalty] = useState(game.penalty ?? false)
+  const [headerGoal, setHeaderGoal] = useState(game.header_goal ?? false)
+  const [yellowCards, setYellowCards] = useState(game.brazil_yellow_cards ?? 0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -69,7 +106,11 @@ function ResultForm({ game, betAmount, accumulated, onSaved }: {
     e.preventDefault()
     setError('')
 
-    if (!window.confirm(`Confirmar resultado: Brasil ${brazilGoals} × ${oppGoals} ${game.opponent}?\nEsta ação calcula pontos e ajusta o pote.`)) return
+    const confirmMsg = isEdit
+      ? `Corrigir resultado: Brasil ${brazilGoals} × ${oppGoals} ${game.opponent}?\nOs pontos de todos os participantes serão recalculados. O pote acumulado NÃO será alterado automaticamente.`
+      : `Confirmar resultado: Brasil ${brazilGoals} × ${oppGoals} ${game.opponent}?\nEsta ação calcula pontos e ajusta o pote.`
+
+    if (!window.confirm(confirmMsg)) return
 
     setLoading(true)
     const res = await fetch('/api/admin/results', {
@@ -93,6 +134,7 @@ function ResultForm({ game, betAmount, accumulated, onSaved }: {
     setLoading(false)
 
     if (!res.ok) { setError(data.error ?? 'Erro.'); return }
+    if (data.pot_warning) window.alert(data.pot_warning)
     onSaved()
   }
 
@@ -164,10 +206,18 @@ function ResultForm({ game, betAmount, accumulated, onSaved }: {
 
       {error && <p className="text-red-400 text-xs">{error}</p>}
 
-      <button type="submit" disabled={loading}
-        className="w-full bg-green-500 hover:bg-green-400 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50">
-        {loading ? 'Salvando...' : '✅ Lançar resultado e calcular pontos'}
-      </button>
+      <div className="flex gap-2">
+        <button type="submit" disabled={loading}
+          className="flex-1 bg-green-500 hover:bg-green-400 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50">
+          {loading ? 'Salvando...' : isEdit ? '💾 Salvar correção e recalcular pontos' : '✅ Lançar resultado e calcular pontos'}
+        </button>
+        {isEdit && onCancel && (
+          <button type="button" onClick={onCancel}
+            className="px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium py-3 rounded-xl transition-colors">
+            Cancelar
+          </button>
+        )}
+      </div>
     </form>
   )
 }
