@@ -1,8 +1,13 @@
 import { getSession } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
-import type { Bet, Game, Participant, RankingEntry } from '@/types'
+import { calculateScore } from '@/lib/scoring'
+import type { Bet, Game, Participant, RankingEntry, ScoreBreakdown } from '@/types'
 import Link from 'next/link'
 import LogoutButton from '@/app/_components/LogoutButton'
+
+function emptyBreakdown(): ScoreBreakdown {
+  return { result: 0, brazil_goals: 0, opp_goals: 0, exact_bonus: 0, first_goal: 0, var: 0, penalty: 0, header: 0, yellow_cards: 0, total: 0 }
+}
 
 async function getRanking(): Promise<RankingEntry[]> {
   const { data: participants } = await supabase
@@ -12,25 +17,23 @@ async function getRanking(): Promise<RankingEntry[]> {
 
   if (!participants) return []
 
-  const { data: bets } = await supabase
-    .from('bets')
-    .select('participant_id, points, brazil_goals, opponent_goals, game_id')
+  const { data: bets } = await supabase.from('bets').select('*')
 
   const { data: games } = await supabase
     .from('games')
-    .select('id, brazil_goals, opponent_goals')
+    .select('*')
     .eq('status', 'finished')
 
-  const finishedGameIds = new Set((games ?? []).map((g: Pick<Game, 'id'>) => g.id))
+  const finishedGames = (games ?? []) as Game[]
+  const finishedGameIds = new Set(finishedGames.map((g) => g.id))
 
   const ranking: RankingEntry[] = participants.map((p: Participant) => {
     const myBets = (bets ?? []).filter(
-      (b: Pick<Bet, 'participant_id' | 'points' | 'brazil_goals' | 'opponent_goals' | 'game_id'>) =>
-        b.participant_id === p.id && finishedGameIds.has(b.game_id)
+      (b: Bet) => b.participant_id === p.id && finishedGameIds.has(b.game_id)
     )
-    const total = myBets.reduce((sum: number, b: typeof myBets[0]) => sum + (b.points ?? 0), 0)
-    const exactScores = myBets.filter((b: typeof myBets[0]) => {
-      const game = (games ?? []).find((g: Pick<Game, 'id'>) => g.id === b.game_id)
+    const total = myBets.reduce((sum: number, b: Bet) => sum + (b.points ?? 0), 0)
+    const exactScores = myBets.filter((b: Bet) => {
+      const game = finishedGames.find((g) => g.id === b.game_id)
       return (
         game &&
         game.brazil_goals !== null &&
@@ -39,11 +42,22 @@ async function getRanking(): Promise<RankingEntry[]> {
       )
     }).length
 
+    const breakdown = myBets.reduce((acc: ScoreBreakdown, b: Bet) => {
+      const game = finishedGames.find((g) => g.id === b.game_id)
+      if (!game) return acc
+      const bd = calculateScore(b, game)
+      for (const key of Object.keys(acc) as (keyof ScoreBreakdown)[]) {
+        acc[key] += bd[key]
+      }
+      return acc
+    }, emptyBreakdown())
+
     return {
       participant: p,
       total_points: total,
       bets_count: myBets.length,
       exact_scores: exactScores,
+      breakdown,
     }
   })
 
@@ -61,6 +75,24 @@ async function getNextGame(): Promise<Game | null> {
   return data
 }
 
+async function getAllGames(): Promise<Game[]> {
+  const { data } = await supabase
+    .from('games')
+    .select('*')
+    .order('game_date', { ascending: true })
+  return (data ?? []) as Game[]
+}
+
+async function getMyBet(participantId: string, gameId: string): Promise<Bet | null> {
+  const { data } = await supabase
+    .from('bets')
+    .select('*')
+    .eq('participant_id', participantId)
+    .eq('game_id', gameId)
+    .single()
+  return data
+}
+
 async function getPot(): Promise<number> {
   const { data } = await supabase.from('pot_state').select('accumulated').single()
   return data?.accumulated ?? 0
@@ -68,7 +100,9 @@ async function getPot(): Promise<number> {
 
 export default async function RankingPage() {
   const session = await getSession()
-  const [ranking, nextGame, pot] = await Promise.all([getRanking(), getNextGame(), getPot()])
+  const [ranking, nextGame, pot, allGames] = await Promise.all([getRanking(), getNextGame(), getPot(), getAllGames()])
+
+  const myNextBet = nextGame && session ? await getMyBet(session.id, nextGame.id) : null
 
   const betAmount = parseInt(process.env.NEXT_PUBLIC_BET_AMOUNT ?? '10000')
   const numParticipants = ranking.length
@@ -117,12 +151,17 @@ export default async function RankingPage() {
                 href="/bet"
                 className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-4 py-2 rounded-xl text-sm transition-colors"
               >
-                Palpitar
+                {myNextBet ? 'Editar palpite' : 'Palpitar'}
               </Link>
             ) : (
-              <span className="text-xs text-red-400 bg-red-900/20 px-3 py-2 rounded-xl">
-                {nextGame.status === 'open' ? 'Palpites fechados' : 'Aguardando...'}
-              </span>
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="text-xs text-red-400 bg-red-900/20 px-3 py-2 rounded-xl">
+                  Palpites fechados
+                </span>
+                <Link href={`/games/${nextGame.id}/bets`} className="text-xs text-yellow-400 hover:underline">
+                  👀 Ver palpites
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -137,6 +176,41 @@ export default async function RankingPage() {
           </p>
         </div>
         <div className="text-3xl">💰</div>
+      </div>
+
+      {/* Jogos */}
+      <div>
+        <h2 className="text-lg font-bold text-gray-200 mb-3">Jogos</h2>
+        <div className="space-y-2">
+          {allGames.map((g) => {
+            const gameTime = new Date(g.game_date)
+            const minutesUntil = (gameTime.getTime() - now.getTime()) / 60000
+            const closed = g.status === 'finished' || minutesUntil <= 5
+            return (
+              <div key={g.id} className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-white">
+                    Brasil 🆚 {g.opponent}
+                    {g.status === 'finished' && ` · ${g.brazil_goals} × ${g.opponent_goals}`}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {gameTime.toLocaleString('pt-BR', {
+                      weekday: 'short', day: '2-digit', month: '2-digit',
+                      hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Luanda'
+                    })}
+                  </p>
+                </div>
+                {closed ? (
+                  <Link href={`/games/${g.id}/bets`} className="text-xs text-yellow-400 hover:underline whitespace-nowrap">
+                    👀 Ver palpites
+                  </Link>
+                ) : (
+                  <span className="text-xs text-gray-500 whitespace-nowrap">🔒 Em breve</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* Ranking */}
@@ -166,6 +240,19 @@ export default async function RankingPage() {
                     {entry.bets_count} palpite{entry.bets_count !== 1 ? 's' : ''} ·{' '}
                     {entry.exact_scores} placar{entry.exact_scores !== 1 ? 'es' : ''} exato{entry.exact_scores !== 1 ? 's' : ''}
                   </p>
+                  {entry.breakdown.total > 0 && (
+                    <p className="text-[11px] text-gray-600 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+                      {entry.breakdown.result > 0 && <span>🏆 Resultado +{entry.breakdown.result}</span>}
+                      {entry.breakdown.exact_bonus > 0 && <span>💯 Exato +{entry.breakdown.exact_bonus}</span>}
+                      {entry.breakdown.brazil_goals > 0 && <span>🇧🇷 Gols +{entry.breakdown.brazil_goals}</span>}
+                      {entry.breakdown.opp_goals > 0 && <span>🆚 Gols +{entry.breakdown.opp_goals}</span>}
+                      {entry.breakdown.first_goal > 0 && <span>🥇 1º gol +{entry.breakdown.first_goal}</span>}
+                      {entry.breakdown.var > 0 && <span>🚫 VAR +{entry.breakdown.var}</span>}
+                      {entry.breakdown.penalty > 0 && <span>⚠️ Pênalti +{entry.breakdown.penalty}</span>}
+                      {entry.breakdown.header > 0 && <span>🤕 Cabeçada +{entry.breakdown.header}</span>}
+                      {entry.breakdown.yellow_cards > 0 && <span>🟨 Cartões +{entry.breakdown.yellow_cards}</span>}
+                    </p>
+                  )}
                 </div>
                 <span className="font-black text-xl text-white">{entry.total_points}</span>
                 <span className="text-xs text-gray-500">pts</span>
