@@ -123,6 +123,9 @@ export default async function RankingPage() {
           <p className="text-gray-400 text-xs">Olá, {session?.name}</p>
         </div>
         <div className="flex gap-2 items-center">
+          <Link href="/regras" className="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 transition-colors">
+            📜 Regras
+          </Link>
           {session?.is_admin && (
             <Link href="/admin" className="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 transition-colors">
               Admin
