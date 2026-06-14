@@ -27,6 +27,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes.' }, { status: 400 })
   }
 
+  // 0. Busca o jogo atual para saber se já está finalizado (edição)
+  const { data: currentGame, error: currentGameError } = await supabase
+    .from('games')
+    .select('*')
+    .eq('id', game_id)
+    .single()
+
+  if (currentGameError || !currentGame) {
+    return NextResponse.json({ error: 'Jogo não encontrado.' }, { status: 404 })
+  }
+
+  const isEdit = currentGame.status === 'finished'
+
   // 1. Busca todos os palpites do jogo
   const { data: bets, error: betsError } = await supabase
     .from('bets')
@@ -56,6 +69,41 @@ export async function POST(request: Request) {
 
   for (const u of updates) {
     await supabase.from('bets').update({ points: u.points }).eq('id', u.id)
+  }
+
+  // 3b. Se o jogo já estava finalizado, isto é uma EDIÇÃO/correção:
+  // atualiza apenas os dados do jogo e recalcula os pontos (já feito acima).
+  // O pote NÃO é recalculado (já foi distribuído/acumulado na primeira vez).
+  if (isEdit) {
+    const { error: editGameError } = await supabase
+      .from('games')
+      .update({
+        brazil_goals,
+        opponent_goals,
+        first_goal_type,
+        first_goal_player,
+        var_annulled,
+        penalty,
+        header_goal,
+        brazil_yellow_cards,
+      })
+      .eq('id', game_id)
+
+    if (editGameError) return NextResponse.json({ error: editGameError.message }, { status: 500 })
+
+    const newWinners = getPotWinners(bets ?? [], gameResult as Game)
+    const oldWinnerId = currentGame.pot_winner_id
+    const oldWinnerStillWins = oldWinnerId ? newWinners.includes(oldWinnerId) : newWinners.length === 0
+    const winnersChanged = !oldWinnerStillWins || (oldWinnerId === null && newWinners.length > 0)
+
+    return NextResponse.json({
+      ok: true,
+      edited: true,
+      bets_scored: updates.length,
+      pot_warning: winnersChanged
+        ? 'Atenção: a correção mudou quem teria acertado o placar exato deste jogo. O pote (pot_state) NÃO foi recalculado automaticamente — se necessário, ajuste manualmente no Supabase.'
+        : null,
+    })
   }
 
   // 4. Determina vencedores do pote
