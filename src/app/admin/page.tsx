@@ -37,16 +37,6 @@ export default async function AdminDashboard() {
           </Link>
         ))}
       </div>
-
-      <div className="bg-gray-900 border border-yellow-900/40 rounded-2xl p-4 mt-4">
-        <p className="text-sm text-yellow-400 font-semibold mb-2">Fluxo rápido</p>
-        <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside">
-          <li>Cadastre os participantes com nome + PIN</li>
-          <li>Cadastre os 3 jogos da fase de grupos</li>
-          <li>Após cada jogo, lance o resultado em <strong className="text-white">Resultados</strong></li>
-          <li>O sistema calcula pontos e pote automaticamente</li>
-        </ol>
-      </div>
     </div>
   )
 }
