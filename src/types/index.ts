@@ -75,4 +75,5 @@ export interface RankingEntry {
   total_points: number
   bets_count: number
   exact_scores: number
+  breakdown: ScoreBreakdown
 }
