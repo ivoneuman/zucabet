@@ -88,7 +88,6 @@ const FLAG_MAP: Record<string, string> = {
     'África do Sul': '🇿🇦',
     'Angola': '🇦🇴',
     'Mali': '🇲🇱',
-    'Marrocos': '🇲🇦',
 }
 
 export function getCountryFlag(country: string): string {
