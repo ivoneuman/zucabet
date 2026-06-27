@@ -24,17 +24,16 @@ const COUNTRY_CODE: Record<string, string> = {
   'Burquina Fasso': 'bf', 'Ruanda': 'rw', 'Cabo Verde': 'cv', 'Etiópia': 'et',
 }
 
-export function FlagIcon({ country, size = 18 }: { country: string; size?: number }) {
+export function FlagIcon({ country }: { country: string }) {
   const code = COUNTRY_CODE[country]
   if (!code) return null
-  const w = Math.round(size * 1.5)
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`https://flagcdn.com/${w}x${size}/${code}.png`}
+      src={`https://flagcdn.com/w20/${code}.png`}
       alt={country}
-      width={w}
-      height={size}
+      width={20}
+      height={15}
       style={{ display: 'inline', verticalAlign: 'middle', borderRadius: 2 }}
     />
   )
