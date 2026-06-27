@@ -1,4 +1,4 @@
-import { getCountryFlag } from '@/lib/flags'
+import { FlagIcon } from '@/app/_components/FlagIcon'
 import { getSession } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { calculateScore } from '@/lib/scoring'
@@ -142,7 +142,7 @@ export default async function RankingPage() {
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Próximo jogo</p>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-bold text-lg">🇧🇷 Brasil 🆚 {getCountryFlag(nextGame.opponent)} {nextGame.opponent}</p>
+              <p className="font-bold text-lg"><><FlagIcon country="Brasil" /> Brasil 🆚 <FlagIcon country={nextGame.opponent} /> {nextGame.opponent}</></p>
               <p className="text-gray-400 text-sm">
                 {new Date(nextGame.game_date).toLocaleString('pt-BR', {
                   weekday: 'short', day: '2-digit', month: '2-digit',
@@ -194,7 +194,7 @@ export default async function RankingPage() {
               <div key={g.id} className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-3">
                 <div>
                   <p className="text-sm font-medium text-white">
-                    🇧🇷 Brasil 🆚 {getCountryFlag(g.opponent)} {g.opponent}
+                    <><FlagIcon country="Brasil" /> Brasil 🆚 <FlagIcon country={g.opponent} /> {g.opponent}</>
                     {g.status === 'finished' && ` · ${g.brazil_goals} × ${g.opponent_goals}`}
                   </p>
                   <p className="text-xs text-gray-500">
