@@ -1,6 +1,6 @@
 // Mapa de nomes de países (em português) para códigos ISO usados pelo flagcdn.com
 const COUNTRY_CODE: Record<string, string> = {
-  'Marrocos': 'ma', 'Haiti': 'ht', 'Escócia': 'gb-sct',
+  'Brasil': 'br', 'Marrocos': 'ma', 'Haiti': 'ht', 'Escócia': 'gb-sct',
   'Argentina': 'ar', 'Uruguai': 'uy', 'Colômbia': 'co', 'Equador': 'ec',
   'Peru': 'pe', 'Chile': 'cl', 'Venezuela': 've', 'Bolívia': 'bo', 'Paraguai': 'py',
   'EUA': 'us', 'Estados Unidos': 'us', 'México': 'mx', 'Canadá': 'ca',
