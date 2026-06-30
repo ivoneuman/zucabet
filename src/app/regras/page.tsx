@@ -41,7 +41,7 @@ export default async function RegrasPage() {
 
       {/* Pontuação */}
       <section className="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-3">
-        <h2 className="font-bold text-white">🏆 Pontuação (máximo 15 pts por jogo)</h2>
+        <h2 className="font-bold text-white">🏆 Pontuação (máximo 17 pts por jogo)</h2>
         <p className="text-sm text-gray-400">Para cada jogo, você ganha pontos por cada item que acertar no seu palpite:</p>
         <ul className="text-sm text-gray-300 space-y-1.5">
           <li className="flex justify-between"><span>🏆 Resultado (vitória / empate / derrota)</span><span className="text-yellow-400 font-semibold">3 pts</span></li>
@@ -53,7 +53,12 @@ export default async function RegrasPage() {
           <li className="flex justify-between"><span>⚠️ Pênalti no jogo (sim/não)</span><span className="text-yellow-400 font-semibold">1 pt</span></li>
           <li className="flex justify-between"><span>🤕 Gol de cabeça (sim/não)</span><span className="text-yellow-400 font-semibold">1 pt</span></li>
           <li className="flex justify-between"><span>🟨 Cartões amarelos do Brasil (exato)</span><span className="text-yellow-400 font-semibold">1 pt</span></li>
+          <li className="flex justify-between"><span>⏱️ Jogo vai para prorrogação? (sim/não)</span><span className="text-yellow-400 font-semibold">1 pt</span></li>
+          <li className="flex justify-between"><span>🥅 Jogo vai para disputa de pênaltis? (sim/não)</span><span className="text-yellow-400 font-semibold">1 pt</span></li>
         </ul>
+        <p className="text-xs text-gray-500 mt-1">
+          ⏱️ O <strong className="text-gray-400">placar apostado</strong> é sempre o do tempo regulamentar (90 min). Prorrogação e pênaltis não contam para o placar.
+        </p>
         <p className="text-xs text-gray-500">
           Acertar o placar exato vale tanto o ponto de gols do Brasil quanto o de gols do adversário, mais o bônus de +5 — ou seja, 7 pts só do placar.
         </p>
