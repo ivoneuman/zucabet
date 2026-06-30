@@ -16,7 +16,7 @@ export default function BetForm({ game, participantId, existingBet }: Props) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
-  const [brazilGoals, setBrazilGoals] = useState(existingBet?.brazil_goals ?? 1)
+  const [brazilGoals, setBrazilGoals] = useState(existingBet?.brazil_goals ?? 0)
   const [oppGoals, setOppGoals] = useState(existingBet?.opponent_goals ?? 0)
   const [firstGoalType, setFirstGoalType] = useState<FirstGoalType>(existingBet?.first_goal_type ?? 'player')
   const [firstGoalPlayer, setFirstGoalPlayer] = useState(existingBet?.first_goal_player ?? '')
