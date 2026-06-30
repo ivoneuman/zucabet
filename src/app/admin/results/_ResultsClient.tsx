@@ -8,6 +8,7 @@ interface Props {
   games: Game[]
   betAmount: number
   accumulated: number
+  exactWinners: Record<string, string[]>
 }
 
 function firstGoalLabel(type: FirstGoalType | null, player: string | null) {
@@ -17,7 +18,7 @@ function firstGoalLabel(type: FirstGoalType | null, player: string | null) {
   return '—'
 }
 
-export default function ResultsClient({ games, betAmount, accumulated }: Props) {
+export default function ResultsClient({ games, betAmount, accumulated, exactWinners }: Props) {
   const router = useRouter()
   const [editingId, setEditingId] = useState<string | null>(null)
   const pendingGames = games.filter((g) => g.status !== 'finished')
@@ -63,6 +64,17 @@ export default function ResultsClient({ games, betAmount, accumulated }: Props) 
                   <span>🤕 Cabeçada: {g.header_goal ? 'Sim' : 'Não'}</span>
                   <span>🟨 Cartões BR: {g.brazil_yellow_cards}</span>
                 </div>
+                {(() => {
+                  const winners = exactWinners[g.id] ?? []
+                  return (
+                    <p className="text-xs">
+                      {winners.length > 0
+                        ? <span className="text-green-400">💯 Placar exato: {winners.join(', ')}</span>
+                        : <span className="text-gray-600">💯 Ninguém cravou o placar</span>
+                      }
+                    </p>
+                  )
+                })()}
 
                 {editingId === g.id && (
                   <ResultForm
