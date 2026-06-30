@@ -24,6 +24,8 @@ export default function BetForm({ game, participantId, existingBet }: Props) {
   const [penalty, setPenalty] = useState(existingBet?.penalty ?? false)
   const [headerGoal, setHeaderGoal] = useState(existingBet?.header_goal ?? false)
   const [yellowCards, setYellowCards] = useState(existingBet?.brazil_yellow_cards ?? 0)
+    const [overtime, setOvertime] = useState(existingBet?.overtime ?? false)
+    const [penaltyShootout, setPenaltyShootout] = useState(existingBet?.penalty_shootout ?? false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
