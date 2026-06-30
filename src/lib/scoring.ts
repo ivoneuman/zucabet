@@ -1,4 +1,4 @@
-̀ͯimport type { Bet, Game, ScoreBreakdown } from '@/types'
+import type { Bet, Game, ScoreBreakdown } from '@/types'
 
 function gameResult(brazil: number, opp: number): 'win' | 'draw' | 'loss' {
   if (brazil > opp) return 'win'
@@ -21,7 +21,7 @@ export function normalizePlayerName(name: string): string {
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // remove acentos
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
     .replace(/[.\-]/g, ' ') // pontuação -> espaço
     .replace(/\s+/g, ' ')
     .trim()
@@ -40,7 +40,7 @@ export function calculateScore(bet: Bet, game: Game): ScoreBreakdown {
     game.header_goal === null ||
     game.brazil_yellow_cards === null
   ) {
-    return { result: 0, brazil_goals: 0, opp_goals: 0, exact_bonus: 0, first_goal: 0, var: 0, penalty: 0, header: 0, yellow_cards: 0, total: 0 }
+    return { result: 0, brazil_goals: 0, opp_goals: 0, exact_bonus: 0, first_goal: 0, var: 0, penalty: 0, header: 0, yellow_cards: 0, overtime: 0, penalty_shootout: 0, total: 0 }
   }
 
   const breakdown: ScoreBreakdown = {
@@ -53,6 +53,8 @@ export function calculateScore(bet: Bet, game: Game): ScoreBreakdown {
     penalty: 0,
     header: 0,
     yellow_cards: 0,
+    overtime: 0,
+    penalty_shootout: 0,
     total: 0,
   }
 
@@ -113,6 +115,20 @@ export function calculateScore(bet: Bet, game: Game): ScoreBreakdown {
     breakdown.yellow_cards = 1
   }
 
+  // Prorrogação (só pontuado se o jogo tiver o campo definido)
+  if (game.overtime !== null && game.overtime !== undefined) {
+    if (bet.overtime === game.overtime) {
+      breakdown.overtime = 1
+    }
+  }
+
+  // Disputa de pênaltis (shootout)
+  if (game.penalty_shootout !== null && game.penalty_shootout !== undefined) {
+    if (bet.penalty_shootout === game.penalty_shootout) {
+      breakdown.penalty_shootout = 1
+    }
+  }
+
   breakdown.total =
     breakdown.result +
     breakdown.brazil_goals +
@@ -122,7 +138,9 @@ export function calculateScore(bet: Bet, game: Game): ScoreBreakdown {
     breakdown.var +
     breakdown.penalty +
     breakdown.header +
-    breakdown.yellow_cards
+    breakdown.yellow_cards +
+    breakdown.overtime +
+    breakdown.penalty_shootout
 
   return breakdown
 }
