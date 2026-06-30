@@ -63,6 +63,8 @@ export default function ResultsClient({ games, betAmount, accumulated, exactWinn
                   <span>⚠️ Pênalti: {g.penalty ? 'Sim' : 'Não'}</span>
                   <span>🤕 Cabeçada: {g.header_goal ? 'Sim' : 'Não'}</span>
                   <span>🟨 Cartões BR: {g.brazil_yellow_cards}</span>
+                  <span>⏱️ Prorrogação: {g.overtime ? 'Sim' : 'Não'}</span>
+                  <span>🥅 Pênaltis: {g.penalty_shootout ? 'Sim' : 'Não'}</span>
                 </div>
                 {(() => {
                   const winners = exactWinners[g.id] ?? []
