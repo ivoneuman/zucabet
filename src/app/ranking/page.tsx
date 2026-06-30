@@ -1,4 +1,4 @@
-import { FlagIcon } from '@/app/_components/FlagIcon'
+import { getCountryFlag } from '@/lib/flags'
 import { getSession } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { calculateScore } from '@/lib/scoring'
@@ -7,7 +7,7 @@ import Link from 'next/link'
 import LogoutButton from '@/app/_components/LogoutButton'
 
 function emptyBreakdown(): ScoreBreakdown {
-  return { result: 0, brazil_goals: 0, opp_goals: 0, exact_bonus: 0, first_goal: 0, var: 0, penalty: 0, header: 0, yellow_cards: 0, total: 0 }
+  return { result: 0, brazil_goals: 0, opp_goals: 0, exact_bonus: 0, first_goal: 0, var: 0, penalty: 0, header: 0, yellow_cards: 0, overtime: 0, penalty_shootout: 0, total: 0 }
 }
 
 async function getRanking(): Promise<RankingEntry[]> {
@@ -142,7 +142,7 @@ export default async function RankingPage() {
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Próximo jogo</p>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-bold text-lg"><><FlagIcon country="Brasil" /> Brasil 🆚 <FlagIcon country={nextGame.opponent} /> {nextGame.opponent}</></p>
+              <p className="font-bold text-lg">🇧🇷 Brasil 🆚 {getCountryFlag(nextGame.opponent)} {nextGame.opponent}</p>
               <p className="text-gray-400 text-sm">
                 {new Date(nextGame.game_date).toLocaleString('pt-BR', {
                   weekday: 'short', day: '2-digit', month: '2-digit',
@@ -194,7 +194,7 @@ export default async function RankingPage() {
               <div key={g.id} className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-3">
                 <div>
                   <p className="text-sm font-medium text-white">
-                    <><FlagIcon country="Brasil" /> Brasil 🆚 <FlagIcon country={g.opponent} /> {g.opponent}</>
+                    🇧🇷 Brasil 🆚 {getCountryFlag(g.opponent)} {g.opponent}
                     {g.status === 'finished' && ` · ${g.brazil_goals} × ${g.opponent_goals}`}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -255,6 +255,8 @@ export default async function RankingPage() {
                       {entry.breakdown.penalty > 0 && <span>⚠️ Pênalti +{entry.breakdown.penalty}</span>}
                       {entry.breakdown.header > 0 && <span>🤕 Cabeçada +{entry.breakdown.header}</span>}
                       {entry.breakdown.yellow_cards > 0 && <span>🟨 Cartões +{entry.breakdown.yellow_cards}</span>}
+                      {entry.breakdown.overtime > 0 && <span>⏱️ Prorroga +{entry.breakdown.overtime}</span>}
+                      {entry.breakdown.penalty_shootout > 0 && <span>🥅 Pênaltis +{entry.breakdown.penalty_shootout}</span>}
                     </p>
                   )}
                 </div>
