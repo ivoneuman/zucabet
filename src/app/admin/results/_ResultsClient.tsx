@@ -111,6 +111,8 @@ function ResultForm({ game, betAmount, accumulated, isEdit = false, onSaved, onC
   const [penalty, setPenalty] = useState(game.penalty ?? false)
   const [headerGoal, setHeaderGoal] = useState(game.header_goal ?? false)
   const [yellowCards, setYellowCards] = useState(game.brazil_yellow_cards ?? 0)
+  const [overtime, setOvertime] = useState(game.overtime ?? false)
+  const [penaltyShootout, setPenaltyShootout] = useState(game.penalty_shootout ?? false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -138,6 +140,8 @@ function ResultForm({ game, betAmount, accumulated, isEdit = false, onSaved, onC
         penalty,
         header_goal: headerGoal,
         brazil_yellow_cards: yellowCards,
+        overtime,
+        penalty_shootout: penaltyShootout,
         bet_amount: betAmount,
         accumulated,
       }),
@@ -193,6 +197,8 @@ function ResultForm({ game, betAmount, accumulated, isEdit = false, onSaved, onC
           { label: 'Gol anulado (VAR)?', value: varAnnulled, set: setVarAnnulled },
           { label: 'Pênalti?', value: penalty, set: setPenalty },
           { label: 'Gol de cabeça?', value: headerGoal, set: setHeaderGoal },
+          { label: 'Prorrogação?', value: overtime, set: setOvertime },
+          { label: 'Pênaltis (shootout)?', value: penaltyShootout, set: setPenaltyShootout },
         ].map(({ label, value, set }) => (
           <div key={label} className="bg-gray-800 rounded-xl p-3">
             <p className="text-xs text-gray-400 mb-2">{label}</p>
