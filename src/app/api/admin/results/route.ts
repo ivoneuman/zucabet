@@ -19,6 +19,8 @@ export async function POST(request: Request) {
     penalty,
     header_goal,
     brazil_yellow_cards,
+    overtime,
+    penalty_shootout,
     bet_amount,
     accumulated,
   } = body
@@ -59,6 +61,8 @@ export async function POST(request: Request) {
     penalty,
     header_goal,
     brazil_yellow_cards,
+    overtime: overtime ?? null,
+    penalty_shootout: penalty_shootout ?? null,
   }
 
   // 3. Calcula pontos de cada palpite
@@ -72,8 +76,6 @@ export async function POST(request: Request) {
   }
 
   // 3b. Se o jogo já estava finalizado, isto é uma EDIÇÃO/correção:
-  // atualiza apenas os dados do jogo e recalcula os pontos (já feito acima).
-  // O pote NÃO é recalculado (já foi distribuído/acumulado na primeira vez).
   if (isEdit) {
     const { error: editGameError } = await supabase
       .from('games')
@@ -86,6 +88,8 @@ export async function POST(request: Request) {
         penalty,
         header_goal,
         brazil_yellow_cards,
+        overtime: overtime ?? null,
+        penalty_shootout: penalty_shootout ?? null,
       })
       .eq('id', game_id)
 
@@ -115,12 +119,10 @@ export async function POST(request: Request) {
   let newAccumulated = accumulated ?? 0
 
   if (winners.length > 0) {
-    // Divide igualmente (arredonda para baixo, o restante vai para o próximo)
     const share = Math.floor(potThisRound / winners.length)
-    newAccumulated = potThisRound - share * winners.length // sobra de arredondamento
-    potWinnerId = winners[0] // para referência; na prática split é manual
+    newAccumulated = potThisRound - share * winners.length
+    potWinnerId = winners[0]
   } else {
-    // Ninguém acertou: acumula
     newAccumulated = potThisRound
   }
 
@@ -136,6 +138,8 @@ export async function POST(request: Request) {
       penalty,
       header_goal,
       brazil_yellow_cards,
+      overtime: overtime ?? null,
+      penalty_shootout: penalty_shootout ?? null,
       status: 'finished',
       pot_winner_id: winners.length === 1 ? winners[0] : null,
     })
