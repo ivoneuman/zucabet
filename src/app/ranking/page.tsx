@@ -99,9 +99,32 @@ async function getPot(): Promise<number> {
   return data?.accumulated ?? 0
 }
 
+async function getExactWinners(games: Game[]): Promise<Record<string, string[]>> {
+  const finishedGames = games.filter((g) => g.status === 'finished')
+  if (finishedGames.length === 0) return {}
+  const finishedIds = finishedGames.map((g) => g.id)
+  const { data: bets } = await supabase
+    .from('bets')
+    .select('game_id, brazil_goals, opponent_goals, participants(name)')
+    .in('game_id', finishedIds)
+  const result: Record<string, string[]> = {}
+  for (const game of finishedGames) {
+    result[game.id] = (bets ?? [])
+      .filter(
+        (b: any) =>
+          b.game_id === game.id &&
+          b.brazil_goals === game.brazil_goals &&
+          b.opponent_goals === game.opponent_goals
+      )
+      .map((b: any) => b.participants?.name ?? '?')
+  }
+  return result
+}
+
 export default async function RankingPage() {
   const session = await getSession()
   const [ranking, nextGame, pot, allGames] = await Promise.all([getRanking(), getNextGame(), getPot(), getAllGames()])
+  const exactWinners = await getExactWinners(allGames)
 
   const myNextBet = nextGame && session ? await getMyBet(session.id, nextGame.id) : null
 
@@ -203,6 +226,14 @@ export default async function RankingPage() {
                       hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Luanda'
                     })}
                   </p>
+                  {g.status === 'finished' && (
+                    <p className="text-xs mt-0.5">
+                      {(exactWinners[g.id] ?? []).length > 0
+                        ? <span className="text-green-400">💯 {exactWinners[g.id].join(', ')}</span>
+                        : <span className="text-gray-600">💯 Ninguém cravou</span>
+                      }
+                    </p>
+                  )}
                 </div>
                 {closed ? (
                   <Link href={`/games/${g.id}/bets`} className="text-xs text-yellow-400 hover:underline whitespace-nowrap">
