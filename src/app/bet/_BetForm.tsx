@@ -24,8 +24,8 @@ export default function BetForm({ game, participantId, existingBet }: Props) {
   const [penalty, setPenalty] = useState(existingBet?.penalty ?? false)
   const [headerGoal, setHeaderGoal] = useState(existingBet?.header_goal ?? false)
   const [yellowCards, setYellowCards] = useState(existingBet?.brazil_yellow_cards ?? 0)
-    const [overtime, setOvertime] = useState(existingBet?.overtime ?? false)
-    const [penaltyShootout, setPenaltyShootout] = useState(existingBet?.penalty_shootout ?? false)
+  const [overtime, setOvertime] = useState(existingBet?.overtime ?? false)
+  const [penaltyShootout, setPenaltyShootout] = useState(existingBet?.penalty_shootout ?? false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -49,6 +49,8 @@ export default function BetForm({ game, participantId, existingBet }: Props) {
       penalty,
       header_goal: headerGoal,
       brazil_yellow_cards: yellowCards,
+      overtime,
+      penalty_shootout: penaltyShootout,
     }
 
     const res = await fetch('/api/bets', {
@@ -81,9 +83,16 @@ export default function BetForm({ game, participantId, existingBet }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Aviso tempo regulamentar */}
+      <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl px-4 py-3">
+        <p className="text-xs text-amber-400">
+          ⏱️ <strong>Atenção:</strong> o placar apostado é o do <strong>tempo regulamentar</strong> (90 min). Prorrogação e pênaltis não contam para o placar.
+        </p>
+      </div>
+
       {/* Placar */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <p className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wide">Placar</p>
+        <p className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wide">Placar (tempo regulamentar)</p>
         <div className="flex items-center justify-center gap-6">
           <div className="text-center">
             <p className="text-xs text-gray-500 mb-2">🇧🇷 Brasil</p>
@@ -131,21 +140,11 @@ export default function BetForm({ game, participantId, existingBet }: Props) {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
         <p className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Bônus de 1 ponto cada</p>
 
-        <BoolField
-          label="Haverá gol anulado pelo VAR?"
-          value={varAnnulled}
-          onChange={setVarAnnulled}
-        />
-        <BoolField
-          label="Haverá cobrança de pênalti?"
-          value={penalty}
-          onChange={setPenalty}
-        />
-        <BoolField
-          label="Haverá gol de cabeça?"
-          value={headerGoal}
-          onChange={setHeaderGoal}
-        />
+        <BoolField label="Haverá gol anulado pelo VAR?" value={varAnnulled} onChange={setVarAnnulled} />
+        <BoolField label="Haverá cobrança de pênalti?" value={penalty} onChange={setPenalty} />
+        <BoolField label="Haverá gol de cabeça?" value={headerGoal} onChange={setHeaderGoal} />
+        <BoolField label="Vai para prorrogação?" value={overtime} onChange={setOvertime} />
+        <BoolField label="Vai para disputa de pênaltis?" value={penaltyShootout} onChange={setPenaltyShootout} />
 
         {/* Cartões amarelos */}
         <div>
