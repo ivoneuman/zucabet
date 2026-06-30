@@ -40,7 +40,7 @@ export default function GamesClient({ games }: { games: Game[] }) {
     const res = await fetch('/api/admin/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ opponent: opponent.trim(), game_date: gameDate, phase }),
+      body: JSON.stringify({ opponent: opponent.trim(), game_date: gameDate + ':00+01:00', phase }),
     })
     const data = await res.json()
     setLoading(false)
