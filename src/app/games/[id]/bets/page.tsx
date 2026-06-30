@@ -82,6 +82,8 @@ export default async function GameBetsPage({ params }: { params: { id: string } 
                 <span>⚠️ Pênalti: {bet.penalty ? 'Sim' : 'Não'}</span>
                 <span>🤕 Cabeçada: {bet.header_goal ? 'Sim' : 'Não'}</span>
                 <span>🟨 Cartões BR: {bet.brazil_yellow_cards}</span>
+                <span>⏱️ Prorrogação: {bet.overtime ? 'Sim' : 'Não'}</span>
+                <span>🥅 Pênaltis: {bet.penalty_shootout ? 'Sim' : 'Não'}</span>
                 {game.status === 'finished' && bet.points !== null && (
                   <span className="text-yellow-400">🏆 {bet.points} pts</span>
                 )}
