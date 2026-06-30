@@ -1,4 +1,4 @@
-import type { Bet, Game, ScoreBreakdown } from '@/types'
+̀ͯimport type { Bet, Game, ScoreBreakdown } from '@/types'
 
 function gameResult(brazil: number, opp: number): 'win' | 'draw' | 'loss' {
   if (brazil > opp) return 'win'
